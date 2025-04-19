@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GEPT Vocabulary Quiz</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #ecf0f3, #ffffff);
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      font-size: 2em;
+    }
+    .progress-container {
+      height: 16px;
+      background: #ddd;
+      border-radius: 10px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      transition: width 0.3s ease-in-out;
+    }
+    .question {
+      font-size: 1.5em;
+      margin: 1.2em 0;
+      text-align: center;
+    }
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .options button {
+      padding: 16px;
+      font-size: 1.1em;
+      font-weight: 600;
+      border: none;
+      border-radius: 30px;
+      background: #e0e5ec;
+      box-shadow: 6px 6px 12px #c5c8cb, -6px -6px 12px #ffffff;
+      transition: all 0.2s ease-in-out;
+      cursor: pointer;
+    }
+    .options button:hover {
+      background: #d0d7de;
+    }
+    .options button.correct {
+      background: #d4edda;
+      color: #155724;
+      box-shadow: inset 4px 4px 8px #b1cbbb;
+    }
+    .options button.incorrect {
+      background: #f8d7da;
+      color: #721c24;
+      box-shadow: inset 4px 4px 8px #e5b7b9;
+    }
+    .result-log {
+      margin-top: 30px;
+    }
+    .result-log li {
+      margin: 5px 0;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <h1>GEPT初級 單字挑戰</h1>
+  
+  <div style="text-align: center; margin-top: 20px;">
+    <label for="username">請輸入你的名字：</label>
+    <input id="username" type="text" placeholder="例如：Emmett" style="padding: 8px 12px; font-size: 1em; border-radius: 8px; border: 1px solid #ccc; margin-top: 8px;" />
+    <button onclick="startQuiz()" style="margin-left: 10px; padding: 8px 16px; font-size: 1em; border-radius: 8px; background-color: #007bff; color: white; border: none; cursor: pointer;">開始挑戰</button>
+  </div>
+  <div class="progress-container" style="display:none;" id="progress-section">
+
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  <div class="quiz" style="display:none;">
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <h3 id="result-title" style="margin-top:30px;"></h3><ul class="result-log" id="results"></ul>
+  </div>
+
+  <script>
+    const data = [    { Vocabulary: "breathe fire", Chinese: "噴火" },
+    { Vocabulary: "trainer", Chinese: "訓練師" },
+    { Vocabulary: "journey", Chinese: "旅程 / 一段路" },
+    { Vocabulary: "rare", Chinese: "稀有的" },
+    { Vocabulary: "care", Chinese: "照顧" },
+    { Vocabulary: "decide", Chinese: "決定" },
+    { Vocabulary: "pick", Chinese: "挑選" },
+    { Vocabulary: "lab", Chinese: "實驗室" },
+    { Vocabulary: "each", Chinese: "每個人" },
+    { Vocabulary: "fluffy", Chinese: "毛絨絨的" },
+    { Vocabulary: "energetic", Chinese: "有活力的" },
+    { Vocabulary: "nod", Chinese: "點頭" },
+    { Vocabulary: "electric", Chinese: "電的" },
+    { Vocabulary: "icy", Chinese: "結凍的" },
+    { Vocabulary: "punch", Chinese: "揍" },
+    { Vocabulary: "wings", Chinese: "翅膀" },
+    { Vocabulary: "horns", Chinese: "角" },
+    { Vocabulary: "tail", Chinese: "尾巴" },
+    { Vocabulary: "furry", Chinese: "有毛的" },
+    { Vocabulary: "striped", Chinese: "有條紋的" },
+    { Vocabulary: "claw", Chinese: "爪子" },
+    { Vocabulary: "library", Chinese: "圖書館" },
+    { Vocabulary: "museum", Chinese: "博物館" },
+    { Vocabulary: "backpack", Chinese: "背包" },
+    { Vocabulary: "breakfast", Chinese: "早餐" },
+    { Vocabulary: "hungry", Chinese: "肚子餓的" },
+    { Vocabulary: "dentist", Chinese: "牙醫" },
+    { Vocabulary: "stationary", Chinese: "文具" },
+    { Vocabulary: "friendly", Chinese: "友善的" },
+    { Vocabulary: "exercise", Chinese: "運動" },
+    { Vocabulary: "science", Chinese: "科學" },
+    { Vocabulary: "noisy", Chinese: "吵的" },
+    { Vocabulary: "brave", Chinese: "勇敢的" },
+    { Vocabulary: "careful", Chinese: "小心的" },
+    { Vocabulary: "weekend", Chinese: "週末" }];
+
+    let questionSet = data.sort(() => Math.random() - 0.5);
+    let currentIndex = 0;
+    let attempts = 0;
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function updateProgressBar() {
+      const percent = ((currentIndex) / questionSet.length) * 100;
+      document.getElementById("progress-bar").style.width = `${percent}%`;
+    }
+
+    function renderQuestion() {
+      attempts = 0;
+      updateProgressBar();
+      const q = questionSet[currentIndex];
+      document.getElementById("question").innerText = `"${q.Vocabulary}" 是什麼意思？`;
+    const utterance = new SpeechSynthesisUtterance(q.Vocabulary);
+    utterance.lang = "en-US";
+    utterance.rate = 0.9;
+    speechSynthesis.speak(utterance);
+
+      const distractors = shuffle(
+        data.filter(item => item !== q).slice(0, 3)
+      );
+
+      const choices = shuffle([...distractors, q]);
+
+      const container = document.getElementById("options");
+      container.innerHTML = "";
+
+      choices.forEach((choice) => {
+        const btn = document.createElement("button");
+        btn.innerText = choice.Chinese;
+        btn.onclick = () => handleChoice(btn, choice);
+        container.appendChild(btn);
+      });
+    }
+
+
+
+
+function handleChoice(button, choice) {
+  const correctAnswer = questionSet[currentIndex].Chinese;
+  attempts++;
+
+  if (choice.Chinese === correctAnswer) {
+    button.classList.add("correct");
+    document.querySelectorAll(".options button").forEach(btn => btn.disabled = true);
+    if (currentIndex === 0 && !document.getElementById("result-title").innerText)
+      document.getElementById("result-title").innerText = `${window.username} 的挑戰結果：`;
+    document.getElementById("results").innerHTML += 
+      (attempts === 1
+        ? `<li>✅ ${questionSet[currentIndex].Vocabulary} — ${questionSet[currentIndex].Chinese} — ${attempts} 次</li>`
+        : `<li style="color: #d39e00;">🟡 ${questionSet[currentIndex].Vocabulary} — ${questionSet[currentIndex].Chinese} — ${attempts} 次</li>`);
+    
+    setTimeout(() => {
+      currentIndex++;
+      if (currentIndex < questionSet.length) {
+        renderQuestion();
+      } else {
+        updateProgressBar();
+        document.querySelector(".quiz").innerHTML = `
+          <h2>🎉 恭喜 ${window.username} 完成本次挑戰！</h2>
+          <h3 id="result-title" style="margin-top:30px;"></h3><ul class="result-log" id="results">${document.getElementById("results").innerHTML}</ul>
+          <div style="text-align: center; margin-top: 20px;">
+            <button onclick="location.reload()" style="
+              padding: 12px 24px;
+              font-size: 1em;
+              border: none;
+              border-radius: 30px;
+              background: linear-gradient(to right, #ff9f1a, #ffc107);
+              color: #333;
+              font-weight: bold;
+              cursor: pointer;
+              box-shadow: 4px 4px 10px rgba(0,0,0,0.1);
+            ">🔁 再玩一次</button>
+          </div>`;
+      }
+    }, 800);
+  } else {
+    button.classList.add("incorrect");
+    button.disabled = true;
+  }
+}
+
+ 
+function startQuiz() {
+  const name = document.getElementById("username").value.trim();
+  if (!name) {
+    alert("請輸入名字再開始挑戰！");
+    return;
+  }
+  
+  // 修改按鈕文字從「開始挑戰」變為「重聽發音」
+  const startButton = document.querySelector("button[onclick='startQuiz()']");
+  startButton.innerHTML = "🔊 重聽發音";
+  startButton.onclick = function() {
+    speakCurrentWord();
+  };
+  
+  // 隱藏輸入框
+  document.getElementById("username").style.display = "none";
+  document.querySelector("label[for='username']").style.display = "none";
+  
+  document.getElementById("progress-section").style.display = "block";
+  document.querySelector(".quiz").style.display = "block";
+  window.username = name;
+  renderQuestion();
+}
+
+// 新增語音函數
+function speakCurrentWord() {
+  const currentWord = questionSet[currentIndex].Vocabulary;
+  const utterance = new SpeechSynthesisUtterance(currentWord);
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  speechSynthesis.speak(utterance);
+}
+
+
+
+  
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    const input = document.getElementById("username");
+    if (input && input.style.display !== "none") {
+      startQuiz();
+    }
+  }
+});
+</script>
+
+  <div style="margin-top: 60px; font-size: 0.9em; color: #aaa; text-align: center;">
+    Made by Evelyn YT ｜© 2025
+  </div>
+</body>
+</html>
