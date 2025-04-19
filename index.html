@@ -93,6 +93,23 @@
   </div>
 
   <script>
+
+let selectedVoice = null;
+
+function findEnglishVoice() {
+  const voices = speechSynthesis.getVoices();
+  const priority = ['Google US English', 'Samantha', 'Microsoft Aria Online (Natural) - English (United States)', 'Microsoft Zira', 'Microsoft David', 'Karen', 'Alex'];
+  for (const name of priority) {
+    const match = voices.find(v => v.name.includes(name));
+    if (match) return match;
+  }
+  return voices.find(v => v.lang === 'en-US') || voices[0];
+}
+
+speechSynthesis.onvoiceschanged = () => {
+  selectedVoice = findEnglishVoice();
+};
+
     const data = [    { Vocabulary: "breathe fire", Chinese: "噴火" },
     { Vocabulary: "trainer", Chinese: "訓練師" },
     { Vocabulary: "journey", Chinese: "旅程 / 一段路" },
@@ -147,7 +164,10 @@
       updateProgressBar();
       const q = questionSet[currentIndex];
       document.getElementById("question").innerText = `"${q.Vocabulary}" 是什麼意思？`;
+    speechSynthesis.cancel();
+    if (!selectedVoice) selectedVoice = findEnglishVoice();
     const utterance = new SpeechSynthesisUtterance(q.Vocabulary);
+    utterance.voice = selectedVoice;
     utterance.lang = "en-US";
     utterance.rate = 0.9;
     speechSynthesis.speak(utterance);
@@ -244,7 +264,10 @@ function startQuiz() {
 // 新增語音函數
 function speakCurrentWord() {
   const currentWord = questionSet[currentIndex].Vocabulary;
+  speechSynthesis.cancel();
+  if (!selectedVoice) selectedVoice = findEnglishVoice();
   const utterance = new SpeechSynthesisUtterance(currentWord);
+  utterance.voice = selectedVoice;
   utterance.lang = "en-US";
   utterance.rate = 0.9;
   speechSynthesis.speak(utterance);
